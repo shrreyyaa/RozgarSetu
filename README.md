@@ -244,3 +244,4 @@ lmis/
 
 ## 🔒 Demo Data Notice
 All data shipped with this prototype is **simulated for demonstration and hackathon evaluation purposes**. Every dataset is marked with `is_demo = true` in the `data_sources` register. To connect live administrative datasets (NCS, PLFS, PMKVY, Skill India Digital Hub), replace the simulated ingestion connectors in `backend/app/connectors.py` and point `DATABASE_URL` to your production database.
+# RozgarSetu
