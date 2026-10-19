@@ -24,4 +24,7 @@ if os.environ.get("VERCEL") or not os.access(str(data_dir), os.W_OK):
     if tmp_db.exists():
         os.environ["DATABASE_URL"] = f"sqlite:///{tmp_db}"
 
-from app.main import app
+try:
+    from app.main import app
+except ImportError:
+    from backend.app.main import app

@@ -517,13 +517,22 @@ def api_place_stats(geo_id: str):
             c_rows = conn.execute(text("SELECT COUNT(*), SUM(seats), SUM(enrolled), SUM(certified), SUM(placed), AVG(fill_rate), AVG(placement_rate) FROM training_centre")).fetchone()
             vac_rows = conn.execute(text("SELECT SUM(active_vacancies) FROM industry")).scalar() or 2400
 
-    centres_count = int(c_rows[0] or 0)
-    total_seats = int(c_rows[1] or 0)
-    total_enrolled = int(c_rows[2] or 0)
-    total_certified = int(c_rows[3] or 0)
-    total_placed = int(c_rows[4] or 0)
-    avg_fill_rate = round(float(c_rows[5] or 0.85) * 100, 1)
-    avg_placement_rate = round(float(c_rows[6] or 0.75) * 100, 1)
+    if c_rows:
+        centres_count = int(c_rows[0] or 0)
+        total_seats = int(c_rows[1] or 0)
+        total_enrolled = int(c_rows[2] or 0)
+        total_certified = int(c_rows[3] or 0)
+        total_placed = int(c_rows[4] or 0)
+        avg_fill_rate = round(float(c_rows[5] or 0.85) * 100, 1)
+        avg_placement_rate = round(float(c_rows[6] or 0.75) * 100, 1)
+    else:
+        centres_count = 0
+        total_seats = 0
+        total_enrolled = 0
+        total_certified = 0
+        total_placed = 0
+        avg_fill_rate = 85.0
+        avg_placement_rate = 75.0
 
     # Scaling baseline for workforce / registrations
     base_workers = 8_500_000 if place["type"] == "state" else (2_800_000 if place["type"] == "district" else int(2_800_000 * city_factor))
@@ -1932,14 +1941,15 @@ if DIST_DIR.exists():
 elif STATIC_DIR.exists():
     target_static = STATIC_DIR
 
-if target_static:
-    app.mount("/assets", StaticFiles(directory=str(target_static / "assets")), name="assets")
+if target_static is not None:
+    static_root: Path = target_static
+    app.mount("/assets", StaticFiles(directory=str(static_root / "assets")), name="assets")
 
     @app.get("/{full_path:path}")
     def serve_spa(full_path: str):
         if full_path.startswith("api/") or full_path in ["health", "ranked", "summary", "districts", "model_log"]:
             raise HTTPException(404)
-        file_path = target_static / full_path
+        file_path = static_root / full_path
         if file_path.is_file():
             return FileResponse(str(file_path))
-        return FileResponse(str(target_static / "index.html"))
+        return FileResponse(str(static_root / "index.html"))
