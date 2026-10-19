@@ -1,15 +1,11 @@
-# SETU LMIS — Production & Vercel Runtime Requirements
+# SETU LMIS — Optimized Serverless Runtime Requirements (Vercel)
+# Lightweight production dependencies to stay well under Vercel's 225 MB function limit:
 fastapi>=0.110.0
-uvicorn[standard]>=0.28.0
-python-multipart>=0.0.9
 pydantic>=2.0.0
 sqlalchemy>=2.0.0
 pandas>=2.0.0
 numpy>=1.24.0
-httpx>=0.27.0
-aiofiles>=23.2.0
-reportlab>=4.0.0
-pillow>=10.0.0
+python-multipart>=0.0.9
 
-# For local ML model training and pytest evaluation, install:
-# pip install -r backend/requirements.txt
+# Heavy ML training & dev dependencies (xgboost, scikit-learn, statsmodels, reportlab, pillow, uvicorn, pytest)
+# are preserved for local development in: backend/requirements.txt

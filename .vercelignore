@@ -8,6 +8,14 @@ __pycache__/
 .pytest_cache/
 tests/
 backend/tests/
+backend/static/
+backend/data/lmis.db
+backend/data/setu.db-shm
+backend/data/setu.db-wal
+backend/Dockerfile
+Dockerfile
+docker-compose.yml
+pytest.ini
 .git/
 .DS_Store
 *.log

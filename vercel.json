@@ -4,7 +4,8 @@
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/index.py": {
-      "includeFiles": "backend/**"
+      "includeFiles": "{backend/app/**,backend/analytics/**,backend/pipeline/**,backend/config.py,backend/seed.py,backend/data/setu.db}",
+      "maxDuration": 30
     }
   },
   "rewrites": [

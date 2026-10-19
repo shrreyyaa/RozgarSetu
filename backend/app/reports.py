@@ -42,7 +42,7 @@ def _render_official_banner(place_name: str, place_type: str, user_role: Optiona
     d.text((45, 115), "MSDE", fill=(251, 146, 60))
 
     # Header Titles
-    d.text((165, 32), "SETU — LABOUR MARKET INTELLIGENCE SYSTEM", fill=(255, 255, 255))
+    d.text((165, 32), "RozgarSetu— LABOUR MARKET INTELLIGENCE SYSTEM", fill=(255, 255, 255))
     d.text((165, 76), "Ministry of Skill Development & Entrepreneurship (MSDE) · Government of India", fill=(226, 232, 240))
     role_str = f" · Officer: {user_role.capitalize()} Planner" if user_role else ""
     d.text((165, 114), f"Region: {place_name} ({place_type.capitalize()}){role_str} · Generated: {datetime.utcnow().strftime('%B %d, %Y')}", fill=(148, 163, 184))

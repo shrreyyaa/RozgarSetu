@@ -52,17 +52,20 @@ def _seasonal_naive(train: np.ndarray, h: int) -> np.ndarray:
 
 
 def _holt_winters(train: np.ndarray, h: int) -> np.ndarray:
-    from statsmodels.tsa.holtwinters import ExponentialSmoothing
-    fit = ExponentialSmoothing(
-        train, trend="add", damped_trend=True, seasonal=None,
-        initialization_method="estimated"
-    ).fit(optimized=True)
-    return np.clip(np.asarray(fit.forecast(h), dtype=float), 0, None)
+    try:
+        from statsmodels.tsa.holtwinters import ExponentialSmoothing
+        fit = ExponentialSmoothing(
+            train, trend="add", damped_trend=True, seasonal=None,
+            initialization_method="estimated"
+        ).fit(optimized=True)
+        return np.clip(np.asarray(fit.forecast(h), dtype=float), 0, None)
+    except Exception:
+        return _seasonal_naive(train, h)
 
 
 def _sarima(train: np.ndarray, h: int) -> np.ndarray:
-    from statsmodels.tsa.statespace.sarimax import SARIMAX
     try:
+        from statsmodels.tsa.statespace.sarimax import SARIMAX
         if len(train) >= 24:
             fit = SARIMAX(train, order=(1, 1, 0), seasonal_order=(1, 0, 0, 12),
                           enforce_stationarity=False, enforce_invertibility=False).fit(disp=False)
@@ -70,13 +73,19 @@ def _sarima(train: np.ndarray, h: int) -> np.ndarray:
             fit = SARIMAX(train, order=(1, 1, 0)).fit(disp=False)
         return np.clip(np.asarray(fit.forecast(h), dtype=float), 0, None)
     except Exception:
-        from statsmodels.tsa.arima.model import ARIMA as _ARIMA
-        fit2 = _ARIMA(train, order=(1, 1, 0)).fit()
-        return np.clip(np.asarray(fit2.forecast(h), dtype=float), 0, None)
+        try:
+            from statsmodels.tsa.arima.model import ARIMA as _ARIMA
+            fit2 = _ARIMA(train, order=(1, 1, 0)).fit()
+            return np.clip(np.asarray(fit2.forecast(h), dtype=float), 0, None)
+        except Exception:
+            return _seasonal_naive(train, h)
 
 
 def _xgb_regressor(train: np.ndarray, h: int, n_lags: int = 3) -> np.ndarray:
-    import xgboost as xgb
+    try:
+        import xgboost as xgb
+    except ImportError:
+        return _holt_winters(train, h)
     if len(train) < n_lags + 2:
         return _holt_winters(train, h)
     n = len(train)
@@ -86,22 +95,25 @@ def _xgb_regressor(train: np.ndarray, h: int, n_lags: int = 3) -> np.ndarray:
         month = ((i - 1) % 12) + 1
         rows_X.append([*lags, np.sin(2 * np.pi * month / 12), np.cos(2 * np.pi * month / 12), i])
         rows_y.append(train[i])
-    model = xgb.XGBRegressor(
-        n_estimators=200, max_depth=3, learning_rate=0.1,
-        subsample=0.8, colsample_bytree=0.8, random_state=42, verbosity=0, n_jobs=1
-    )
-    model.fit(np.array(rows_X, dtype=float), np.array(rows_y, dtype=float))
-    history = list(train)
-    preds = []
-    for step in range(h):
-        i = n + step
-        lags = np.array(history[-n_lags:][::-1], dtype=float)
-        month = ((i - 1) % 12) + 1
-        x = np.array([[*lags, np.sin(2 * np.pi * month / 12), np.cos(2 * np.pi * month / 12), i]])
-        yhat = max(0.0, float(model.predict(x)[0]))
-        preds.append(yhat)
-        history.append(yhat)
-    return np.array(preds, dtype=float)
+    try:
+        model = xgb.XGBRegressor(
+            n_estimators=200, max_depth=3, learning_rate=0.1,
+            subsample=0.8, colsample_bytree=0.8, random_state=42, verbosity=0, n_jobs=1
+        )
+        model.fit(np.array(rows_X, dtype=float), np.array(rows_y, dtype=float))
+        history = list(train)
+        preds = []
+        for step in range(h):
+            i = n + step
+            lags = np.array(history[-n_lags:][::-1], dtype=float)
+            month = ((i - 1) % 12) + 1
+            x = np.array([[*lags, np.sin(2 * np.pi * month / 12), np.cos(2 * np.pi * month / 12), i]])
+            yhat = max(0.0, float(model.predict(x)[0]))
+            preds.append(yhat)
+            history.append(yhat)
+        return np.array(preds, dtype=float)
+    except Exception:
+        return _holt_winters(train, h)
 
 
 _FUNCS = {
