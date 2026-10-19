@@ -1,0 +1,11 @@
+import sqlite3, pandas as pd
+pd.set_option("display.width",200)
+c=sqlite3.connect("backend/data/setu.db")
+print("\n-- rows per district x source_label")
+print(pd.read_sql("SELECT d.name district, s.source_label, COUNT(*) rows FROM supply_snapshot s JOIN district d ON d.id=s.district_id GROUP BY 1,2",c).to_string(index=False))
+print("\n-- overall label counts")
+lab=dict(c.execute("SELECT source_label, COUNT(*) FROM supply_snapshot GROUP BY 1").fetchall())
+for k in ("Real","Estimated","Sample"): print(f"{k:10s} {lab.get(k,0)}")
+print("\n-- sample rows (Pune)")
+print(pd.read_sql("SELECT d.name district,m.name trade,s.period,s.seats,s.enrolled,s.certified,s.expected_available_workers eaw,s.source_label FROM supply_snapshot s JOIN district d ON d.id=s.district_id JOIN occupation_master m ON m.master_id=s.master_id WHERE d.name='Pune'",c).to_string(index=False))
+print("\nCOUNT(*) supply_snapshot:", c.execute("SELECT COUNT(*) FROM supply_snapshot").fetchone()[0], "| demand_monthly:", c.execute("SELECT COUNT(*) FROM demand_monthly").fetchone()[0])
